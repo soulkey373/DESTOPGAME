@@ -89,6 +89,32 @@ button {
   flex-wrap: wrap;
 }
 
+.identity-pill {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  color: #fffaf0;
+  background: rgba(20, 39, 43, 0.48);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.identity-pill select {
+  min-height: 30px;
+  max-width: 150px;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 28px 4px 10px;
+  color: var(--ink);
+  background: #fffaf0;
+  font-weight: 900;
+  outline: none;
+}
+
 .sync-pill {
   min-height: 36px;
   display: inline-grid;
@@ -490,6 +516,16 @@ input:focus {
 .wide {
   max-width: 680px;
   margin-bottom: 14px;
+}
+
+.role-waiting {
+  max-width: 680px;
+  border: 2px solid rgba(23, 122, 138, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  color: #315a58;
+  background: #eaf5f4;
+  font-weight: 850;
 }
 
 .guess-area {

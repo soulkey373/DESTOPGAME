@@ -112,6 +112,7 @@ const decks = {
 const state = {
   roomCode: "----",
   players: ["阿峰", "小葵", "Mika"],
+  localPlayer: "",
   selectedDeck: "people",
   phase: "setup",
   step: "secret",
@@ -143,6 +144,7 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const els = {
   syncStatus: $("#syncStatus"),
   onlineNote: $("#onlineNote"),
+  localPlayerSelect: $("#localPlayerSelect"),
   roomCodeLabel: $("#roomCodeLabel"),
   roomCodeInput: $("#roomCodeInput"),
   playerInputs: $("#playerInputs"),
@@ -155,8 +157,13 @@ const els = {
   scoreboard: $("#scoreboard"),
   answerProgress: $("#answerProgress"),
   answerList: $("#answerList"),
+  secretEyebrow: $("#secretEyebrow"),
+  secretTitle: $("#secretTitle"),
   secretPrompt: $("#secretPrompt"),
+  hideSecretBtn: $("#hideSecretBtn"),
   answeringPlayerLabel: $("#answeringPlayerLabel"),
+  answerHint: $("#answerHint"),
+  answerForm: $("#answerForm"),
   answerInput: $("#answerInput"),
   promptPool: $("#promptPool"),
   rankSlots: $("#rankSlots"),
@@ -213,6 +220,7 @@ function saveLobbyLocal() {
   localStorage.setItem("peakGuessRoom", JSON.stringify({
     roomCode: state.roomCode,
     players: state.players,
+    localPlayer: state.localPlayer,
     selectedDeck: state.selectedDeck
   }));
 }
@@ -223,6 +231,7 @@ function loadRoom() {
     if (!saved) return;
     state.roomCode = saved.roomCode || state.roomCode;
     state.players = Array.isArray(saved.players) ? saved.players.slice(0, 6) : state.players;
+    state.localPlayer = saved.localPlayer || state.localPlayer;
     state.selectedDeck = saved.selectedDeck || state.selectedDeck;
   } catch {
     localStorage.removeItem("peakGuessRoom");
@@ -315,6 +324,7 @@ function publishRoom() {
 
 function renderAll() {
   renderRoomCode();
+  renderLocalPlayerSelect();
   renderPlayers();
   renderDecks();
   if (state.phase === "game") {
@@ -326,6 +336,24 @@ function renderAll() {
     els.gamePanel.classList.add("hidden");
     els.setupPanel.classList.remove("hidden");
   }
+}
+
+function renderLocalPlayerSelect() {
+  const previous = state.localPlayer;
+  if (!state.players.includes(state.localPlayer)) {
+    state.localPlayer = state.players[0] || "";
+  }
+
+  els.localPlayerSelect.innerHTML = "";
+  state.players.forEach((player) => {
+    const option = document.createElement("option");
+    option.value = player;
+    option.textContent = player;
+    option.selected = player === state.localPlayer;
+    els.localPlayerSelect.appendChild(option);
+  });
+
+  if (previous !== state.localPlayer) saveLobbyLocal();
 }
 
 function renderPlayers() {
@@ -443,6 +471,21 @@ function activeGuesser() {
   return state.players[state.guesserIndex];
 }
 
+function localPlayer() {
+  if (!state.players.includes(state.localPlayer)) {
+    state.localPlayer = state.players[0] || "";
+  }
+  return state.localPlayer;
+}
+
+function isLocalGuesser() {
+  return localPlayer() === activeGuesser();
+}
+
+function isLocalCurrentAnswerer() {
+  return localPlayer() === currentAnswerer();
+}
+
 function answerers() {
   return state.players.filter((_, index) => index !== state.guesserIndex);
 }
@@ -454,10 +497,37 @@ function currentAnswerer() {
 function renderGame() {
   els.roundLabel.textContent = `第 ${state.round} 回合 · ${decks[state.selectedDeck].name}牌庫`;
   els.guesserLabel.textContent = `${activeGuesser()} 是猜題者`;
-  els.secretPrompt.textContent = state.secretPrompt;
+  renderRoleGate();
   renderScoreboard();
   renderAnswers();
   renderGuessing();
+}
+
+function renderRoleGate() {
+  if (isLocalGuesser()) {
+    els.secretEyebrow.textContent = "猜題者請等待";
+    els.secretTitle.textContent = "先不要看題目";
+    els.secretPrompt.textContent = "請把畫面交給其他玩家看真正題目。等大家看完後，由非猜題者按下開始作答。";
+    els.secretPrompt.classList.add("role-waiting");
+    els.hideSecretBtn.classList.add("hidden");
+  } else {
+    els.secretEyebrow.textContent = "給非猜題者看";
+    els.secretTitle.textContent = "真正題目";
+    els.secretPrompt.textContent = state.secretPrompt;
+    els.secretPrompt.classList.remove("role-waiting");
+    els.hideSecretBtn.classList.remove("hidden");
+  }
+
+  if (isLocalCurrentAnswerer()) {
+    els.answerHint.textContent = "根據你對猜題者的印象，輸入最可能的答案。";
+    els.answerForm.classList.remove("hidden");
+  } else {
+    const target = currentAnswerer();
+    els.answerHint.textContent = isLocalGuesser()
+      ? "你是猜題者，請等待其他玩家作答。"
+      : `目前輪到 ${target || "其他玩家"} 作答，請稍等。`;
+    els.answerForm.classList.add("hidden");
+  }
 }
 
 function renderScoreboard() {
@@ -499,6 +569,7 @@ function setStep(step) {
   $$("[data-step]").forEach((node) => {
     node.classList.toggle("active", node.dataset.step === step);
   });
+  renderRoleGate();
   if (step === "guess") renderGuessing();
 }
 
@@ -508,6 +579,10 @@ function advanceStep(step) {
 }
 
 function submitAnswer() {
+  if (!isLocalCurrentAnswerer()) {
+    toast("現在還不是你的作答回合。");
+    return;
+  }
   const answer = els.answerInput.value.trim();
   if (!answer) {
     toast("請先輸入答案。");
@@ -631,6 +706,12 @@ $("#addPlayerBtn").addEventListener("click", () => {
   state.players.push(`玩家 ${state.players.length + 1}`);
   renderPlayers();
   saveRoom();
+});
+
+$("#localPlayerSelect").addEventListener("change", () => {
+  state.localPlayer = els.localPlayerSelect.value;
+  saveLobbyLocal();
+  renderAll();
 });
 
 $("#startGameBtn").addEventListener("click", startGame);

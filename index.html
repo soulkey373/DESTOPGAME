@@ -32,6 +32,10 @@
             <span class="brand-name">Peak Guess Party</span>
           </div>
           <div class="status-stack">
+            <label class="identity-pill">
+              <span>我是</span>
+              <select id="localPlayerSelect" aria-label="選擇自己是哪位玩家"></select>
+            </label>
             <div class="sync-pill" id="syncStatus">本機模式</div>
             <div class="room-pill">
               <span>房間</span>
@@ -105,8 +109,8 @@
 
               <section class="turn-card" id="turnCard">
                 <div class="turn-state active" data-step="secret">
-                  <p class="eyebrow">給非猜題者看</p>
-                  <h2>真正題目</h2>
+                  <p class="eyebrow" id="secretEyebrow">給非猜題者看</p>
+                  <h2 id="secretTitle">真正題目</h2>
                   <p class="prompt-text" id="secretPrompt"></p>
                   <button class="primary-action" id="hideSecretBtn" type="button">看完了，開始作答</button>
                 </div>
@@ -114,12 +118,14 @@
                 <div class="turn-state" data-step="answer">
                   <p class="eyebrow">誠實回答</p>
                   <h2 id="answeringPlayerLabel"></h2>
-                  <p class="prompt-text small">根據你對猜題者的印象，輸入最可能的答案。</p>
-                  <label class="field wide">
-                    <span>你的答案</span>
-                    <input id="answerInput" placeholder="例如：周杰倫、火鍋、42、登山包..." />
-                  </label>
-                  <button class="primary-action" id="submitAnswerBtn" type="button">送出答案</button>
+                  <p class="prompt-text small" id="answerHint">根據你對猜題者的印象，輸入最可能的答案。</p>
+                  <div id="answerForm">
+                    <label class="field wide">
+                      <span>你的答案</span>
+                      <input id="answerInput" placeholder="例如：周杰倫、火鍋、42、登山包..." />
+                    </label>
+                    <button class="primary-action" id="submitAnswerBtn" type="button">送出答案</button>
+                  </div>
                 </div>
 
                 <div class="turn-state" data-step="guess">
