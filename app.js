@@ -406,7 +406,15 @@ function renderLocalPlayerSelect() {
 
 
 function renderPlayers() {
+  if (!els.playerGrid) return;
 
+  if (
+    !state.guesserName &&
+    state.players.length
+  ) {
+    state.guesserName =
+      state.players[0];
+  }
   els.playerGrid.innerHTML = "";
 
   state.players.forEach((player, index) => {
@@ -420,17 +428,7 @@ function renderPlayers() {
           ? "active"
           : ""
       }`;
-const input = card.querySelector("input");
 
-input.addEventListener("change", (e) => {
-
-  state.players[index] =
-    e.target.value.trim() || player;
-
-  saveRoom();
-
-  renderPlayers();
-});
     const role =
       state.guesserName === player
         ? "🎯 本局猜題者"
@@ -450,8 +448,19 @@ card.innerHTML = `
   <div class="player-card-role">
     ${role}
   </div>
-`;
 
+  ${
+    state.players.length > 3
+      ? `
+      <button
+        class="player-card-remove"
+        type="button">
+        移除
+      </button>
+      `
+      : ""
+  }
+`;
     card.addEventListener("click", () => {
 
       state.guesserName = player;

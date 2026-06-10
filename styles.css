@@ -111,7 +111,14 @@ button {
   width: 100%;
   margin-top: 10px;
 }
+.player-crown{
+  position:absolute;
 
+  top:12px;
+  right:12px;
+
+  font-size:22px;
+}
 .player-card-remove {
   margin-top: 10px;
 
