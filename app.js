@@ -149,7 +149,7 @@ const decks = {
       state.players[0];
 
 
-  }
+  
 }
 const state = {
   roomCode: "----",
@@ -490,7 +490,7 @@ function renderGuesserSelect() {
     state.guesserName = state.players[0];
   }
 }
-unction renderPlayers() {
+function renderPlayers() {
 
   els.playerGrid.innerHTML = "";
 
