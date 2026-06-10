@@ -108,12 +108,56 @@ const decks = {
     ]
   }
 };
+function renderGuesserGrid() {
 
+  if (!els.guesserGrid) return;
+
+  els.guesserGrid.innerHTML = "";
+
+  state.players.forEach(player => {
+
+    const button =
+      document.createElement("button");
+
+    button.type = "button";
+
+    button.className =
+      `deck-card ${
+        state.guesserName === player
+          ? "active"
+          : ""
+      }`;
+
+    button.innerHTML = `
+      <strong>${player}</strong>
+      <span>猜題者</span>
+    `;
+
+    button.addEventListener("click", () => {
+
+      state.guesserName = player;
+
+      renderGuesserGrid();
+
+      saveRoom();
+    });
+
+    els.guesserGrid.appendChild(button);
+  });
+
+  if (!state.guesserName && state.players.length) {
+
+    state.guesserName =
+      state.players[0];
+
+    renderGuesserGrid();
+  }
+}
 const state = {
   roomCode: "----",
   players: ["阿峰", "小葵", "Mika"],
   localPlayer: "",
-   guesserName: "",
+  guesserName: "",
   selectedDeck: "people",
   phase: "setup",
   step: "secret",
@@ -144,8 +188,10 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 const els = {
   guesserSelect: $("#guesserSelect"),
+  guesserGrid: $("#guesserGrid"),
   syncStatus: $("#syncStatus"),
   onlineNote: $("#onlineNote"),
+  nextGuesserGrid:$("#nextGuesserGrid"),
   nextGuesserSelect: $("#nextGuesserSelect"),
   localPlayerSelect: $("#localPlayerSelect"),
   roomCodeLabel: $("#roomCodeLabel"),
@@ -173,6 +219,47 @@ const els = {
   resultTitle: $("#resultTitle"),
   resultPrompt: $("#resultPrompt")
 };
+function renderNextGuesserGrid() {
+
+  if (!els.nextGuesserGrid) return;
+
+  els.nextGuesserGrid.innerHTML = "";
+
+  state.players
+    .filter(
+      player =>
+        player !== activeGuesser()
+    )
+    .forEach(player => {
+
+      const button =
+        document.createElement("button");
+
+      button.type = "button";
+
+      button.className =
+        `deck-card ${
+          state.nextGuesser === player
+            ? "active"
+            : ""
+        }`;
+
+      button.innerHTML = `
+        <strong>${player}</strong>
+        <span>下一回合</span>
+      `;
+
+      button.onclick = () => {
+
+        state.nextGuesser = player;
+
+        renderNextGuesserGrid();
+      };
+
+      els.nextGuesserGrid
+        .appendChild(button);
+    });
+}
 function renderNextGuesserSelect() {
 
   if (!els.nextGuesserSelect) return;
@@ -347,6 +434,7 @@ function renderAll() {
   renderRoomCode();
   renderLocalPlayerSelect();
   renderPlayers();
+  renderGuesserGrid();
   renderGuesserSelect();
   renderDecks();
   if (state.phase === "game") {
@@ -489,7 +577,6 @@ function startGame() {
   state.players = players.slice(0, 6);
   state.scores = Object.fromEntries(state.players.map((p) => [p, state.scores[p] || 0]));
   state.round = 1;
-  state.guesserName = els.guesserSelect.value;
   state.phase = "game";
   beginRound();
   publishRoom();
@@ -723,13 +810,14 @@ function reveal() {
   renderScoreboard();
   renderNextGuesserSelect();
   advanceStep("reveal");
+  renderNextGuesserGrid();
 }
 
 function nextRound() {
   state.round += 1;
     state.guesserName =
     els.nextGuesserSelect.value;
-
+  state.guesserName =state.nextGuesser;
   beginRound();
   publishRoom();
 }
