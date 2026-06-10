@@ -113,6 +113,7 @@ const state = {
   roomCode: "----",
   players: ["阿峰", "小葵", "Mika"],
   localPlayer: "",
+   guesserName: "",
   selectedDeck: "people",
   phase: "setup",
   step: "secret",
@@ -142,6 +143,7 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 const els = {
+  guesserSelect: $("#guesserSelect"),
   syncStatus: $("#syncStatus"),
   onlineNote: $("#onlineNote"),
   localPlayerSelect: $("#localPlayerSelect"),
@@ -200,7 +202,7 @@ function roomPayload() {
     phase: state.phase,
     step: state.step,
     round: state.round,
-    guesserIndex: state.guesserIndex,
+    guesserName: state.guesserName,
     scores: state.scores,
     secretPrompt: state.secretPrompt,
     promptOptions: state.promptOptions,
@@ -298,7 +300,7 @@ async function connectRoom(code, createIfMissing) {
       phase: data.phase || "setup",
       step: data.step || "secret",
       round: data.round || 1,
-      guesserIndex: data.guesserIndex || 0,
+      guesserName: data.guesserName || "", 
       scores: data.scores || {},
       secretPrompt: data.secretPrompt || "",
       promptOptions: Array.isArray(data.promptOptions) ? data.promptOptions : [],
@@ -326,6 +328,7 @@ function renderAll() {
   renderRoomCode();
   renderLocalPlayerSelect();
   renderPlayers();
+  renderGuesserSelect();
   renderDecks();
   if (state.phase === "game") {
     els.setupPanel.classList.add("hidden");
@@ -356,6 +359,30 @@ function renderLocalPlayerSelect() {
   if (previous !== state.localPlayer) saveLobbyLocal();
 }
 
+function renderGuesserSelect() {
+
+  if (!els.guesserSelect) return;
+
+  els.guesserSelect.innerHTML = "";
+
+  state.players.forEach((player) => {
+
+    const option = document.createElement("option");
+
+    option.value = player;
+    option.textContent = player;
+
+    if (player === state.guesserName) {
+      option.selected = true;
+    }
+
+    els.guesserSelect.appendChild(option);
+  });
+
+  if (!state.guesserName) {
+    state.guesserName = state.players[0];
+  }
+}
 function renderPlayers() {
   els.playerInputs.innerHTML = "";
   state.players.forEach((player, index) => {
@@ -443,7 +470,7 @@ function startGame() {
   state.players = players.slice(0, 6);
   state.scores = Object.fromEntries(state.players.map((p) => [p, state.scores[p] || 0]));
   state.round = 1;
-  state.guesserIndex = 0;
+  state.guesserName = els.guesserSelect.value;
   state.phase = "game";
   beginRound();
   publishRoom();
@@ -468,7 +495,7 @@ function beginRound() {
 }
 
 function activeGuesser() {
-  return state.players[state.guesserIndex];
+  return state.guesserName;
 }
 
 function localPlayer() {
@@ -487,7 +514,8 @@ function isLocalCurrentAnswerer() {
 }
 
 function answerers() {
-  return state.players.filter((_, index) => index !== state.guesserIndex);
+  return state.players.filter(
+    player => player !== activeGuesser()
 }
 
 function currentAnswerer() {
@@ -534,7 +562,12 @@ function renderScoreboard() {
   els.scoreboard.innerHTML = "";
   state.players.forEach((player, index) => {
     const tile = document.createElement("div");
-    tile.className = `score-tile ${index === state.guesserIndex ? "active" : ""}`;
+tile.className =
+  `score-tile ${
+    player === activeGuesser()
+      ? "active"
+      : ""
+  }`;
     const name = document.createElement("div");
     name.className = "score-name";
     name.textContent = player;
@@ -673,7 +706,6 @@ function reveal() {
 
 function nextRound() {
   state.round += 1;
-  state.guesserIndex = (state.guesserIndex + 1) % state.players.length;
   beginRound();
   publishRoom();
 }
