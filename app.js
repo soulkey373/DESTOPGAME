@@ -108,7 +108,6 @@ const decks = {
     ]
   }
 };
-function renderGuesserGrid() {
 
   if (!els.guesserGrid) return;
 
@@ -137,7 +136,6 @@ function renderGuesserGrid() {
 
       state.guesserName = player;
 
-      renderGuesserGrid();
 
       saveRoom();
     });
@@ -150,19 +148,22 @@ function renderGuesserGrid() {
     state.guesserName =
       state.players[0];
 
-    renderGuesserGrid();
+
   }
 }
 const state = {
   roomCode: "----",
   players: ["阿峰", "小葵", "Mika"],
   localPlayer: "",
+
   guesserName: "",
+  nextGuesser: "",
+
   selectedDeck: "people",
   phase: "setup",
   step: "secret",
   round: 1,
-  guesserIndex: 0,
+
   scores: {},
   secretPrompt: "",
   promptOptions: [],
@@ -190,9 +191,9 @@ const els = {
   guesserSelect: $("#guesserSelect"),
   guesserGrid: $("#guesserGrid"),
   syncStatus: $("#syncStatus"),
+  playerGrid: $("#playerGrid"),
   onlineNote: $("#onlineNote"),
   nextGuesserGrid:$("#nextGuesserGrid"),
-  nextGuesserSelect: $("#nextGuesserSelect"),
   localPlayerSelect: $("#localPlayerSelect"),
   roomCodeLabel: $("#roomCodeLabel"),
   roomCodeInput: $("#roomCodeInput"),
@@ -434,7 +435,6 @@ function renderAll() {
   renderRoomCode();
   renderLocalPlayerSelect();
   renderPlayers();
-  renderGuesserGrid();
   renderGuesserSelect();
   renderDecks();
   if (state.phase === "game") {
@@ -490,51 +490,68 @@ function renderGuesserSelect() {
     state.guesserName = state.players[0];
   }
 }
-function renderPlayers() {
-  els.playerInputs.innerHTML = "";
+unction renderPlayers() {
+
+  els.playerGrid.innerHTML = "";
+
   state.players.forEach((player, index) => {
-    const row = document.createElement("div");
-    row.className = "player-row";
 
-    const avatar = document.createElement("span");
-    avatar.className = "avatar";
-    avatar.textContent = index + 1;
+    const card =
+      document.createElement("div");
 
-    const input = document.createElement("input");
-    input.value = player;
-    input.setAttribute("aria-label", `玩家 ${index + 1}`);
-    input.addEventListener("input", () => {
-      state.players[index] = input.value.trimStart();
-      saveLobbyLocal();
-    });
-    input.addEventListener("blur", () => {
-      state.players[index] = input.value.trim();
-      renderPlayers();
-      saveRoom();
-    });
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") input.blur();
-    });
+    card.className =
+      `player-card ${
+        state.guesserName === player
+          ? "active"
+          : ""
+      }`;
 
-    const removeButton = document.createElement("button");
-    removeButton.className = "remove-player";
-    removeButton.type = "button";
-    removeButton.title = "移除玩家";
-    removeButton.textContent = "×";
-    removeButton.addEventListener("click", () => {
-      if (state.players.length <= 3) {
-        toast("至少需要 3 位玩家。");
-        return;
+    const role =
+      state.guesserName === player
+        ? "🎯 本局猜題者"
+        : "回答者";
+
+    card.innerHTML = `
+      <div class="player-card-name">
+        ${player}
+      </div>
+
+      <div class="player-card-role">
+        ${role}
+      </div>
+
+      <input
+        value="${player}"
+        data-index="${index}"
+      />
+
+      ${
+        state.players.length > 3
+        ? `
+        <button
+          class="player-card-remove"
+          data-remove="${index}">
+          移除玩家
+        </button>
+        `
+        : ""
       }
-      state.players.splice(index, 1);
+    `;
+
+    card.addEventListener("click", () => {
+
+      state.guesserName = player;
+
       renderPlayers();
+
       saveRoom();
     });
 
-    row.append(avatar, input, removeButton);
-    els.playerInputs.appendChild(row);
+    els.playerGrid.appendChild(card);
   });
-  els.playerCountText.textContent = `${state.players.length} / 6`;
+
+  els.playerCountText.textContent =
+    `${state.players.length} / 6`;
 }
 
 function renderDecks() {
@@ -814,11 +831,19 @@ function reveal() {
 }
 
 function nextRound() {
+
+  if (!state.nextGuesser) {
+    toast("請選擇下一位猜題者");
+    return;
+  }
+
   state.round += 1;
-    state.guesserName =
-    els.nextGuesserSelect.value;
-  state.guesserName =state.nextGuesser;
+
+  state.guesserName =
+    state.nextGuesser;
+
   beginRound();
+
   publishRoom();
 }
 

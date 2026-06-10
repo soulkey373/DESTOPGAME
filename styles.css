@@ -36,7 +36,65 @@ button {
 .app-shell {
   min-height: 100vh;
 }
+.player-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+}
 
+.player-card {
+  border: 2px solid var(--line);
+  border-radius: 8px;
+
+  padding: 14px;
+
+  background: #fffdf6;
+
+  cursor: pointer;
+
+  transition: .2s;
+}
+
+.player-card.active {
+  border-color: var(--rose);
+  background: #ffe9ee;
+}
+
+.player-card-name {
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.player-card-role {
+  margin-top: 8px;
+
+  color: var(--muted);
+
+  font-size: .85rem;
+
+  font-weight: 800;
+}
+
+.player-card input {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.player-card-remove {
+  margin-top: 10px;
+
+  width: 100%;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  min-height: 36px;
+
+  background: #f2ddcf;
+
+  font-weight: 800;
+}
 .hero {
   position: relative;
   min-height: 100vh;
