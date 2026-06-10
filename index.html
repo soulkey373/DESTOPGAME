@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Peak Guess Party</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" aria-label="遊戲主畫面">
+        <div class="skyline" aria-hidden="true">
+          <svg viewBox="0 0 1200 420" role="img">
+            <defs>
+              <linearGradient id="sunset" x1="0" x2="1">
+                <stop offset="0" stop-color="#ffe47a" />
+                <stop offset="0.48" stop-color="#f58a4b" />
+                <stop offset="1" stop-color="#61b7c8" />
+              </linearGradient>
+            </defs>
+            <rect width="1200" height="420" fill="url(#sunset)" />
+            <circle cx="942" cy="108" r="58" fill="#fff2a8" />
+            <path d="M0 300 L140 132 L235 282 L374 84 L505 298 L651 116 L792 288 L933 94 L1076 300 L1200 186 L1200 420 L0 420 Z" fill="#2b6d73" />
+            <path d="M0 344 L185 202 L324 338 L468 186 L610 342 L780 212 L900 330 L1028 194 L1200 338 L1200 420 L0 420 Z" fill="#20494f" />
+            <path d="M0 376 C154 334 278 336 414 378 C571 425 733 334 894 374 C1034 410 1116 378 1200 350 L1200 420 L0 420 Z" fill="#172f34" />
+          </svg>
+        </div>
+
+        <nav class="topbar">
+          <div>
+            <span class="brand-mark">PG</span>
+            <span class="brand-name">Peak Guess Party</span>
+          </div>
+          <div class="status-stack">
+            <div class="sync-pill" id="syncStatus">本機模式</div>
+            <div class="room-pill">
+              <span>房間</span>
+              <strong id="roomCodeLabel">----</strong>
+            </div>
+          </div>
+        </nav>
+
+        <div class="stage">
+          <section class="panel setup-panel" id="setupPanel">
+            <div class="panel-heading">
+              <p class="eyebrow">3-6 人派對桌遊</p>
+              <h1>用朋友對你的印象，猜出真正的題目。</h1>
+            </div>
+
+            <div class="room-controls">
+              <button class="primary-action" id="createRoomBtn" type="button">建立房間</button>
+              <label class="field">
+                <span>房間碼</span>
+                <input id="roomCodeInput" maxlength="6" placeholder="例如 8K2M7A" />
+              </label>
+              <button class="ghost-action" id="joinRoomBtn" type="button">加入</button>
+            </div>
+
+            <div class="online-note" id="onlineNote">
+              目前是本機模式。填入 firebase-config.js 後，房間會自動變成線上同步。
+            </div>
+
+            <div class="players-editor">
+              <div class="section-title">
+                <h2>玩家</h2>
+                <span id="playerCountText">3 / 6</span>
+              </div>
+              <div id="playerInputs" class="player-inputs"></div>
+              <button class="secondary-action" id="addPlayerBtn" type="button">新增玩家</button>
+            </div>
+
+            <div class="deck-picker">
+              <div class="section-title">
+                <h2>牌庫</h2>
+                <span>每組 20 題</span>
+              </div>
+              <div class="deck-grid" id="deckGrid"></div>
+            </div>
+
+            <button class="start-action" id="startGameBtn" type="button">開始遊戲</button>
+          </section>
+
+          <section class="panel game-panel hidden" id="gamePanel">
+            <div class="round-header">
+              <div>
+                <p class="eyebrow" id="roundLabel">第 1 回合</p>
+                <h1 id="guesserLabel">猜題者</h1>
+              </div>
+              <div class="round-actions">
+                <button class="icon-action" id="newRoundBtn" type="button" title="下一回合">↻</button>
+                <button class="icon-action" id="resetBtn" type="button" title="回到房間">⌂</button>
+              </div>
+            </div>
+
+            <div class="scoreboard" id="scoreboard"></div>
+
+            <div class="game-layout">
+              <aside class="answer-board">
+                <div class="section-title">
+                  <h2>玩家答案</h2>
+                  <span id="answerProgress">0 / 0</span>
+                </div>
+                <div id="answerList" class="answer-list"></div>
+              </aside>
+
+              <section class="turn-card" id="turnCard">
+                <div class="turn-state active" data-step="secret">
+                  <p class="eyebrow">給非猜題者看</p>
+                  <h2>真正題目</h2>
+                  <p class="prompt-text" id="secretPrompt"></p>
+                  <button class="primary-action" id="hideSecretBtn" type="button">看完了，開始作答</button>
+                </div>
+
+                <div class="turn-state" data-step="answer">
+                  <p class="eyebrow">誠實回答</p>
+                  <h2 id="answeringPlayerLabel"></h2>
+                  <p class="prompt-text small">根據你對猜題者的印象，輸入最可能的答案。</p>
+                  <label class="field wide">
+                    <span>你的答案</span>
+                    <input id="answerInput" placeholder="例如：周杰倫、火鍋、42、登山包..." />
+                  </label>
+                  <button class="primary-action" id="submitAnswerBtn" type="button">送出答案</button>
+                </div>
+
+                <div class="turn-state" data-step="guess">
+                  <p class="eyebrow">猜題者排序</p>
+                  <h2>把最像真正題目的卡放到 5 分</h2>
+                  <p class="prompt-text small">點選題目卡，再點選分數格。真正題目在哪一格，你就拿幾分。</p>
+                  <div class="guess-area">
+                    <div id="promptPool" class="prompt-pool"></div>
+                    <div id="rankSlots" class="rank-slots"></div>
+                  </div>
+                  <button class="primary-action" id="revealBtn" type="button">揭曉分數</button>
+                </div>
+
+                <div class="turn-state" data-step="reveal">
+                  <p class="eyebrow">揭曉</p>
+                  <h2 id="resultTitle"></h2>
+                  <p class="prompt-text" id="resultPrompt"></p>
+                  <button class="primary-action" id="continueBtn" type="button">下一位猜題者</button>
+                </div>
+              </section>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="./firebase-config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
