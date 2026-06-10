@@ -109,48 +109,7 @@ const decks = {
   }
 };
 
-  if (!els.guesserGrid) return;
 
-  els.guesserGrid.innerHTML = "";
-
-  state.players.forEach(player => {
-
-    const button =
-      document.createElement("button");
-
-    button.type = "button";
-
-    button.className =
-      `deck-card ${
-        state.guesserName === player
-          ? "active"
-          : ""
-      }`;
-
-    button.innerHTML = `
-      <strong>${player}</strong>
-      <span>猜題者</span>
-    `;
-
-    button.addEventListener("click", () => {
-
-      state.guesserName = player;
-
-
-      saveRoom();
-    });
-
-    els.guesserGrid.appendChild(button);
-  });
-
-  if (!state.guesserName && state.players.length) {
-
-    state.guesserName =
-      state.players[0];
-
-
-  
-}
 const state = {
   roomCode: "----",
   players: ["阿峰", "小葵", "Mika"],
@@ -188,7 +147,6 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 const els = {
-  guesserSelect: $("#guesserSelect"),
   guesserGrid: $("#guesserGrid"),
   syncStatus: $("#syncStatus"),
   playerGrid: $("#playerGrid"),
@@ -197,7 +155,6 @@ const els = {
   localPlayerSelect: $("#localPlayerSelect"),
   roomCodeLabel: $("#roomCodeLabel"),
   roomCodeInput: $("#roomCodeInput"),
-  playerInputs: $("#playerInputs"),
   playerCountText: $("#playerCountText"),
   deckGrid: $("#deckGrid"),
   setupPanel: $("#setupPanel"),
@@ -261,25 +218,7 @@ function renderNextGuesserGrid() {
         .appendChild(button);
     });
 }
-function renderNextGuesserSelect() {
 
-  if (!els.nextGuesserSelect) return;
-
-  els.nextGuesserSelect.innerHTML = "";
-
-  state.players
-    .filter(player => player !== activeGuesser())
-    .forEach(player => {
-
-      const option =
-        document.createElement("option");
-
-      option.value = player;
-      option.textContent = player;
-
-      els.nextGuesserSelect.appendChild(option);
-    });
-}
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -434,9 +373,8 @@ function publishRoom() {
 function renderAll() {
   renderRoomCode();
   renderLocalPlayerSelect();
-  renderPlayers();
-  renderGuesserSelect();
-  renderDecks();
+renderPlayers();
+renderDecks();
   if (state.phase === "game") {
     els.setupPanel.classList.add("hidden");
     els.gamePanel.classList.remove("hidden");
@@ -466,30 +404,7 @@ function renderLocalPlayerSelect() {
   if (previous !== state.localPlayer) saveLobbyLocal();
 }
 
-function renderGuesserSelect() {
 
-  if (!els.guesserSelect) return;
-
-  els.guesserSelect.innerHTML = "";
-
-  state.players.forEach((player) => {
-
-    const option = document.createElement("option");
-
-    option.value = player;
-    option.textContent = player;
-
-    if (player === state.guesserName) {
-      option.selected = true;
-    }
-
-    els.guesserSelect.appendChild(option);
-  });
-
-  if (!state.guesserName) {
-    state.guesserName = state.players[0];
-  }
-}
 function renderPlayers() {
 
   els.playerGrid.innerHTML = "";
@@ -505,38 +420,37 @@ function renderPlayers() {
           ? "active"
           : ""
       }`;
+const input = card.querySelector("input");
 
+input.addEventListener("change", (e) => {
+
+  state.players[index] =
+    e.target.value.trim() || player;
+
+  saveRoom();
+
+  renderPlayers();
+});
     const role =
       state.guesserName === player
         ? "🎯 本局猜題者"
-        : "回答者";
+        : "👥 回答者";
 
-    card.innerHTML = `
-      <div class="player-card-name">
-        ${player}
-      </div>
+card.innerHTML = `
+  ${
+    state.guesserName === player
+      ? '<div class="player-crown">👑</div>'
+      : ''
+  }
 
-      <div class="player-card-role">
-        ${role}
-      </div>
+  <div class="player-card-name">
+    ${player}
+  </div>
 
-      <input
-        value="${player}"
-        data-index="${index}"
-      />
-
-      ${
-        state.players.length > 3
-        ? `
-        <button
-          class="player-card-remove"
-          data-remove="${index}">
-          移除玩家
-        </button>
-        `
-        : ""
-      }
-    `;
+  <div class="player-card-role">
+    ${role}
+  </div>
+`;
 
     card.addEventListener("click", () => {
 
@@ -546,7 +460,29 @@ function renderPlayers() {
 
       saveRoom();
     });
+const removeBtn =
+  card.querySelector(".player-card-remove");
 
+if (removeBtn) {
+
+  removeBtn.addEventListener("click", (e) => {
+
+    e.stopPropagation();
+
+    state.players.splice(index, 1);
+
+    if (
+      state.guesserName === player
+    ) {
+      state.guesserName =
+        state.players[0] || "";
+    }
+
+    renderPlayers();
+
+    saveRoom();
+  });
+}
     els.playerGrid.appendChild(card);
   });
 
@@ -584,13 +520,35 @@ function renderRoomCode() {
 function validPlayers() {
   return state.players.map((p) => p.trim()).filter(Boolean);
 }
-
 function startGame() {
+
   const players = validPlayers();
+
   if (players.length < 3) {
     toast("請至少輸入 3 位玩家。");
     return;
   }
+
+  state.players = players.slice(0, 6);
+
+  if (!state.guesserName) {
+    state.guesserName = state.players[0];
+  }
+
+  state.scores = Object.fromEntries(
+    state.players.map((p) => [
+      p,
+      state.scores[p] || 0
+    ])
+  );
+
+  state.round = 1;
+  state.phase = "game";
+
+  beginRound();
+
+  publishRoom();
+}
   state.players = players.slice(0, 6);
   state.scores = Object.fromEntries(state.players.map((p) => [p, state.scores[p] || 0]));
   state.round = 1;
@@ -824,10 +782,9 @@ function reveal() {
   state.scores[guesser] += point;
   els.resultTitle.textContent = `${guesser} 得到 ${point} 分`;
   els.resultPrompt.textContent = `真正題目：${state.secretPrompt}`;
-  renderScoreboard();
-  renderNextGuesserSelect();
-  advanceStep("reveal");
-  renderNextGuesserGrid();
+renderScoreboard();
+renderNextGuesserGrid();
+advanceStep("reveal");
 }
 
 function nextRound() {
