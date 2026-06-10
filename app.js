@@ -549,13 +549,7 @@ function startGame() {
 
   publishRoom();
 }
-  state.players = players.slice(0, 6);
-  state.scores = Object.fromEntries(state.players.map((p) => [p, state.scores[p] || 0]));
-  state.round = 1;
-  state.phase = "game";
-  beginRound();
-  publishRoom();
-}
+
 
 function beginRound() {
   const deck = decks[state.selectedDeck];
