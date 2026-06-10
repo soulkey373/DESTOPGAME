@@ -146,6 +146,7 @@ const els = {
   guesserSelect: $("#guesserSelect"),
   syncStatus: $("#syncStatus"),
   onlineNote: $("#onlineNote"),
+  nextGuesserSelect: $("#nextGuesserSelect"),
   localPlayerSelect: $("#localPlayerSelect"),
   roomCodeLabel: $("#roomCodeLabel"),
   roomCodeInput: $("#roomCodeInput"),
@@ -172,7 +173,25 @@ const els = {
   resultTitle: $("#resultTitle"),
   resultPrompt: $("#resultPrompt")
 };
+function renderNextGuesserSelect() {
 
+  if (!els.nextGuesserSelect) return;
+
+  els.nextGuesserSelect.innerHTML = "";
+
+  state.players
+    .filter(player => player !== activeGuesser())
+    .forEach(player => {
+
+      const option =
+        document.createElement("option");
+
+      option.value = player;
+      option.textContent = player;
+
+      els.nextGuesserSelect.appendChild(option);
+    });
+}
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -702,11 +721,15 @@ function reveal() {
   els.resultTitle.textContent = `${guesser} 得到 ${point} 分`;
   els.resultPrompt.textContent = `真正題目：${state.secretPrompt}`;
   renderScoreboard();
+  renderNextGuesserSelect();
   advanceStep("reveal");
 }
 
 function nextRound() {
   state.round += 1;
+    state.guesserName =
+    els.nextGuesserSelect.value;
+
   beginRound();
   publishRoom();
 }
