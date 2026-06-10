@@ -516,6 +516,7 @@ function isLocalCurrentAnswerer() {
 function answerers() {
   return state.players.filter(
     player => player !== activeGuesser()
+  );
 }
 
 function currentAnswerer() {
